@@ -1,4 +1,4 @@
-var game = new Phaser.Game(500, 800, Phaser.AUTO)
+var game = new Phaser.Game(600, 800, Phaser.AUTO)
 game.state.add("StartGameState", StartGameState);
 game.state.add("EndGameState", EndGameState);
 game.state.add("GameState", GameState);
