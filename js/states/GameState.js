@@ -23,9 +23,9 @@ var GameState = {
 
     preload: function() {
         this.load.spritesheet("goat", "assets/goat_jump_sprite.png", 200, 220, 5, 0, 10);
+        this.load.spritesheet("bird_monster", "assets/bird_monster.png", 111, 86, 4, 1, 4);
         this.load.image('platform', 'assets/platform_block.png');
 
-        this.load.image('life', 'assets/life.png');
         this.load.image('progress', 'assets/progress.png');
     },
 
@@ -34,9 +34,9 @@ var GameState = {
 
         this.platformsCreate();
         this.goatCreate();
+        this.enemiesCreate();
 
         this.setupHUD();
-        this.setupEnemies();
     },
 
     shutdown: function() {
@@ -58,9 +58,16 @@ var GameState = {
         this.goatMovement();
 
         this.platforms.forEachAlive( function( elem ) {
-          this.platformYMin = Math.min( this.platformYMin, elem.y );
-          if( elem.y > this.camera.y + this.game.height ) {
+          this.platformYMin = Math.min(this.platformYMin, elem.y);
+
+          if(elem.y > this.camera.y + this.game.height) {
             elem.kill();
+            var random = this.rnd.integerInRange(1, 5);
+
+            if (random % 2 == 0) {
+                this.enemyCreate(this.platformYMin + 10);
+            }
+
             this.platformCreate(this.rnd.integerInRange(0, this.world.width - this.platformBlockSize), this.platformYMin - 100, this.rnd.integerInRange(1, 3));
           }
         }, this );
@@ -69,17 +76,9 @@ var GameState = {
     // MARK: - Public Methods
 
     setupHUD: function() {
-        this.life = this.game.add.sprite(20, 20, 'life');
-        this.life.scale.setTo(0.2);
-
         this.progress = this.game.add.sprite(20, this.world.centerY, 'progress');
         this.progress.anchor.setTo(0.5);
-    },
-
-    setupEnemies: function() {
-        // this.hawk = this.game.add.sprite(this.world.centerX, this.world.centerY, 'hawk');
-        // this.hawk.scale.setTo(0.5);
-        // this.hawk.anchor.setTo(0.5);
+        this.progress.fixedToCamera = true;
     },
 
     platformsCreate: function() {
@@ -92,6 +91,43 @@ var GameState = {
         for( var i = 0; i < 9; i++ ) {
             this.platformCreate(this.rnd.integerInRange(0, this.world.width - this.platformBlockSize), this.world.height - 100 - 100 * i, this.rnd.integerInRange(1, 3));
         }
+    },
+
+    enemiesCreate: function() {
+        this.birds = this.add.group();
+        this.birds.enableBody = true;
+    },
+
+    enemyCreate: function(positionY) {
+        var sizeScale = 1;
+        var randomSize = this.rnd.integerInRange(1, 20);
+
+        if (randomSize % 2 == 0) {
+            sizeScale = 0.7
+        } else if (randomSize % 3 == 0) {
+            sizeScale = 1;
+        } else {
+            sizeScale = 0.5;
+        }
+
+        var bird = game.add.sprite(0, positionY, 'bird_monster');
+        bird.animations.add("fly", [0, 1, 2, 3], 6, true);
+        bird.enableBody = true;
+        bird.scale.setTo(sizeScale);
+        bird.play('fly');
+
+        var randomOrigin = this.rnd.integerInRange(1, 30);
+
+        if (randomOrigin % 3 == 0) {
+            bird.scale.setTo(-sizeScale, sizeScale);
+            bird.position.x = 300;
+            game.add.tween(bird).to( { x: '-350' }, 20000, Phaser.Easing.Linear.None, true);
+        } else {
+            game.add.tween(bird).to( { x: '350' }, 20000, Phaser.Easing.Linear.None, true);
+        }
+
+
+
     },
 
     createGround: function() {
