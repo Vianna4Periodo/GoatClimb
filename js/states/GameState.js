@@ -15,8 +15,6 @@ var GameState = {
 
         this.platformBlockSize = 40;
         this.jumpForce = 1000;
-
-        this.game.world.setBounds(0, 0, 600, 800);
     },
 
     preload: function() {
@@ -85,7 +83,7 @@ var GameState = {
 
     goatCreate: function() {
         this.goat = this.game.add.sprite(this.world.centerX, this.world.height - 40, 'goat');
-        this.goat.animations.add("jump", [0, 1, 2, 3, 4], 24, false);
+        this.goat.animations.add("jump", [0, 1, 2, 3, 4], 12, false);
         this.goat.anchor.setTo(0.5, 1);
         this.goat.scale.setTo(0.4);
 
@@ -97,7 +95,7 @@ var GameState = {
         this.goat.body.checkCollision.up = false;
         this.goat.body.checkCollision.left = false;
         this.goat.body.checkCollision.right = false;
-        this.goat.body.collideWorldBounds = true;
+        // this.goat.body.collideWorldBounds = true;
     },
 
     goatMovement: function() {
@@ -118,6 +116,15 @@ var GameState = {
         }
 
         this.goat.body.velocity.x = velocity;
+
+        this.world.wrap(this.goat, this.goat.width / 2, false);
+
+        this.goat.yChange = Math.max( this.goat.yChange, Math.abs(this.goat.y - this.goat.yOrig));
+        
+        if( this.goat.y > this.cameraYMin + this.game.height && this.goat.alive ) {
+          // this.state.start( 'Play' );
+          console.log("morreu");
+        }
     }
 
 };
