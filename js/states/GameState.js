@@ -19,6 +19,8 @@ var GameState = {
         this.platformBlockSize = 40;
         this.jumpForce = 500;
         this.points = 0;
+        this.life = 3;
+        this.maxPoints = 300;
     },
 
     preload: function() {
@@ -33,8 +35,8 @@ var GameState = {
         this.stage.backgroundColor = '#b4e3dd';
 
         this.platformsCreate();
-        this.goatCreate();
         this.enemiesCreate();
+        this.goatCreate();
 
         this.setupHUD();
     },
@@ -54,7 +56,9 @@ var GameState = {
         this.cameraYMin = Math.min(this.cameraYMin, this.goat.y - this.game.height + 130);
         this.camera.y = this.cameraYMin;
 
-        this.physics.arcade.collide(this.goat, this.platforms);
+        this.physics.arcade.collide(this.goat, this.birds, this.collisionEnemyHandler, null, this);
+        this.physics.arcade.collide(this.goat, this.platforms, this.collisionPlataformHandler, null, this);
+
         this.goatMovement();
 
         this.platforms.forEachAlive( function( elem ) {
@@ -62,23 +66,34 @@ var GameState = {
 
           if(elem.y > this.camera.y + this.game.height) {
             elem.kill();
-            var random = this.rnd.integerInRange(1, 5);
+            var random = this.rnd.integerInRange(1, 10);
 
-            if (random % 2 == 0) {
+            if (random % 3 == 0) {
                 this.enemyCreate(this.platformYMin + 10);
             }
 
             this.platformCreate(this.rnd.integerInRange(0, this.world.width - this.platformBlockSize), this.platformYMin - 100, this.rnd.integerInRange(1, 3));
           }
         }, this );
+
+        this.updatePoints();
+        // this.updateLife();
     },
 
     // MARK: - Public Methods
 
     setupHUD: function() {
-        this.progress = this.game.add.sprite(20, this.world.centerY, 'progress');
-        this.progress.anchor.setTo(0.5);
-        this.progress.fixedToCamera = true;
+        // Segunda fase
+        // this.lifeText = game.add.text(16, 16, 'Vidas: ' + this.life, { fontSize: '14px', fill: '#000' });
+        // this.lifeText.fixedToCamera = true;
+
+        this.scoreText = game.add.text(16, 16, 'Pontuação: 0 / ' + this.maxPoints, { fontSize: '14px', fill: '#000' });
+        this.scoreText.fixedToCamera = true;
+
+        // Segunda fase
+        // this.progress = this.game.add.sprite(20, this.world.centerY, 'progress');
+        // this.progress.anchor.setTo(0.5);
+        // this.progress.fixedToCamera = true;
     },
 
     platformsCreate: function() {
@@ -111,23 +126,28 @@ var GameState = {
         }
 
         var bird = game.add.sprite(0, positionY, 'bird_monster');
-        bird.animations.add("fly", [0, 1, 2, 3], 6, true);
-        bird.enableBody = true;
+        bird.position.y = positionY;
         bird.scale.setTo(sizeScale);
+        bird.animations.add("fly", [0, 1, 2, 3], 6, true);
         bird.play('fly');
 
-        var randomOrigin = this.rnd.integerInRange(1, 30);
+        this.physics.arcade.enable(bird);
+        bird.enableBody = true;
+        bird.body.immovable = true;
+
+        var randomOrigin = this.rnd.integerInRange(1, 9);
+        var position = 350;
 
         if (randomOrigin % 3 == 0) {
             bird.scale.setTo(-sizeScale, sizeScale);
             bird.position.x = 300;
-            game.add.tween(bird).to( { x: '-350' }, 20000, Phaser.Easing.Linear.None, true);
-        } else {
-            game.add.tween(bird).to( { x: '350' }, 20000, Phaser.Easing.Linear.None, true);
+
+            position = position * -1;
         }
 
+        game.add.tween(bird).to( { x: position }, 20000, Phaser.Easing.Linear.None, true);
 
-
+        this.birds.add(bird);
     },
 
     createGround: function() {
@@ -139,6 +159,18 @@ var GameState = {
         platform.reset(x, y);
         platform.width = this.platformBlockSize * count;
         platform.body.immovable = true;
+
+        // Liberar somente na segunda fase
+
+        // var randomOrigin = this.rnd.integerInRange(1, 9);
+        // var position = 350;
+        //
+        // if (randomOrigin % 3 == 0) {
+        //     platform.position.x = 300;
+        //     position = position * -1;
+        // }
+        //
+        // game.add.tween(platform).to( { x: position }, 30000, Phaser.Easing.Linear.None, true);
 
         return platform;
     },
@@ -174,6 +206,7 @@ var GameState = {
         if (this.goat.body.touching.down) {
             this.goat.play("jump");
             this.goat.body.velocity.y = -this.jumpForce;
+            this.points += 10;
         }
 
         this.goat.body.velocity.x = velocity;
@@ -183,8 +216,32 @@ var GameState = {
         this.goat.yChange = Math.max(this.goat.yChange, Math.abs(this.goat.y - this.goat.yOrig));
         
         if( this.goat.y > this.cameraYMin + this.game.height && this.goat.alive ) {
-            this.state.start('GameState');
+            this.resetGame();
         }
-    }
+    },
+
+    collisionPlataformHandler: function(goat, platform, context) {
+        // console.log("collisionPlataformHandler");
+    },
+
+    collisionEnemyHandler: function(goat, enemy, context) {
+        game.state.restart();
+    },
+
+    resetGame: function() {
+        game.state.restart();
+    },
+
+    updatePoints: function() {
+        this.scoreText.setText("Pontuação: " + this.points + " / " + this.maxPoints);
+
+        if (this.points >= this.maxPoints) {
+            game.state.start('State2');
+        }
+    },
+
+    // updateLife: function() {
+    //     this.lifeText.setText("Vidas: " + this.life + " / 3");
+    // }
 
 };
