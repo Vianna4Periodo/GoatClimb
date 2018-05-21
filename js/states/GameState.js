@@ -28,12 +28,14 @@ var GameState = {
         this.load.spritesheet("bird_monster", "assets/bird_monster.png", 111, 86, 4, 1, 4);
         this.load.image('platform', 'assets/platform_block.png');
 
-        this.load.image('progress', 'assets/progress.png');
+        // this.load.image('progress', 'assets/progress.png');
+        this.load.image('background', 'assets/background.png');
     },
 
     create: function() {
         this.stage.backgroundColor = '#b4e3dd';
 
+        this.backgroundCreate();
         this.platformsCreate();
         this.enemiesCreate();
         this.goatCreate();
@@ -94,6 +96,11 @@ var GameState = {
         // this.progress = this.game.add.sprite(20, this.world.centerY, 'progress');
         // this.progress.anchor.setTo(0.5);
         // this.progress.fixedToCamera = true;
+    },
+
+    backgroundCreate: function() {
+        this.background = this.game.add.sprite(0, 0, 'background');
+        this.background.fixedToCamera = true;
     },
 
     platformsCreate: function() {
@@ -236,7 +243,7 @@ var GameState = {
         this.scoreText.setText("Pontuação: " + this.points + " / " + this.maxPoints);
 
         if (this.points >= this.maxPoints) {
-            game.state.start('State2');
+            game.state.start('SecondState');
         }
     },
 
