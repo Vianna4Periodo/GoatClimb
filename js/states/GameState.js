@@ -8,13 +8,17 @@ var GameState = {
         this.scale.maxHeight = this.game.height;
         this.scale.pageAlignHorizontally = true;
         this.scale.pageAlignVertically = true;
-        this.scale.setScreenSize(true);
 
         this.physics.startSystem(Phaser.Physics.ARCADE);
+
+        this.cameraYMin = 99999;
+        this.platformYMin = 99999;
+
         this.cursors = this.game.input.keyboard.createCursorKeys();
 
         this.platformBlockSize = 40;
-        this.jumpForce = 1000;
+        this.jumpForce = 500;
+        this.points = 0;
     },
 
     preload: function() {
@@ -35,9 +39,31 @@ var GameState = {
         this.setupEnemies();
     },
 
+    shutdown: function() {
+        this.world.setBounds( 0, 0, this.game.width, this.game.height );
+        this.cursor = null;
+        this.goat.destroy();
+        this.goat = null;
+        this.platforms.destroy();
+        this.platforms = null;
+    },
+
     update: function() {
+        this.world.setBounds(0, -this.goat.yChange, this.world.width, this.game.height + this.goat.yChange);
+
+        this.cameraYMin = Math.min(this.cameraYMin, this.goat.y - this.game.height + 130);
+        this.camera.y = this.cameraYMin;
+
         this.physics.arcade.collide(this.goat, this.platforms);
         this.goatMovement();
+
+        this.platforms.forEachAlive( function( elem ) {
+          this.platformYMin = Math.min( this.platformYMin, elem.y );
+          if( elem.y > this.camera.y + this.game.height ) {
+            elem.kill();
+            this.platformCreate(this.rnd.integerInRange(0, this.world.width - this.platformBlockSize), this.platformYMin - 100, this.rnd.integerInRange(1, 3));
+          }
+        }, this );
     },
 
     // MARK: - Public Methods
@@ -64,12 +90,12 @@ var GameState = {
         this.createGround();
 
         for( var i = 0; i < 9; i++ ) {
-            this.platformCreate(this.rnd.integerInRange(0, this.world.width - this.platformBlockSize), this.world.height - 100 * i, this.rnd.integerInRange(1, 5));
+            this.platformCreate(this.rnd.integerInRange(0, this.world.width - this.platformBlockSize), this.world.height - 100 - 100 * i, this.rnd.integerInRange(1, 3));
         }
     },
 
     createGround: function() {
-        this.platformCreate(0, this.world.height - this.platformBlockSize, 15);
+        this.platformCreate(0, this.world.height - this.platformBlockSize, 10);
     },
 
     platformCreate: function(x, y, count) {
@@ -83,7 +109,7 @@ var GameState = {
 
     goatCreate: function() {
         this.goat = this.game.add.sprite(this.world.centerX, this.world.height - 40, 'goat');
-        this.goat.animations.add("jump", [0, 1, 2, 3, 4], 12, false);
+        this.goat.animations.add("jump", [0, 1, 2, 3, 4], 20, false);
         this.goat.anchor.setTo(0.5, 1);
         this.goat.scale.setTo(0.4);
 
@@ -91,11 +117,10 @@ var GameState = {
         this.goat.yChange = 0;
 
         this.physics.arcade.enable(this.goat);
-        this.goat.body.gravity.y = 2000;
+        this.goat.body.gravity.y = 700;
         this.goat.body.checkCollision.up = false;
         this.goat.body.checkCollision.left = false;
         this.goat.body.checkCollision.right = false;
-        // this.goat.body.collideWorldBounds = true;
     },
 
     goatMovement: function() {
@@ -119,11 +144,10 @@ var GameState = {
 
         this.world.wrap(this.goat, this.goat.width / 2, false);
 
-        this.goat.yChange = Math.max( this.goat.yChange, Math.abs(this.goat.y - this.goat.yOrig));
+        this.goat.yChange = Math.max(this.goat.yChange, Math.abs(this.goat.y - this.goat.yOrig));
         
         if( this.goat.y > this.cameraYMin + this.game.height && this.goat.alive ) {
-          // this.state.start( 'Play' );
-          console.log("morreu");
+            this.state.start('GameState');
         }
     }
 
