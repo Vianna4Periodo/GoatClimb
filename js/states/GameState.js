@@ -21,24 +21,15 @@ var GameState = {
         this.points = 0;
         this.life = 3;
         this.maxPoints = 300;
-
-        this.max = 0;
-        this.ront_emitter = 0;
-        this.mid_emitter = 0;
-        this.back_emitter = 0;
-        this.update_interval = 4 * 60;
-        this.i = 0;
     },
 
     preload: function() {
         this.load.spritesheet("goat", "assets/goat_jump_sprite.png", 200, 220, 5, 0, 10);
         this.load.spritesheet("bird_monster", "assets/bird_monster.png", 111, 86, 4, 1, 4);
+
         this.load.image('platform', 'assets/platform_block.png');
-
-        // this.load.image('progress', 'assets/progress.png');
+        this.load.image('baseMountain', 'assets/base_mountain.png');
         this.load.image('background', 'assets/background.png');
-
-        this.load.image('snowflakes', 'assets/snowflakes.png');
     },
 
     create: function() {
@@ -48,7 +39,6 @@ var GameState = {
         this.platformsCreate();
         this.enemiesCreate();
         this.goatCreate();
-        // this.setupSnow();
 
         this.setupHUD();
     },
@@ -89,15 +79,6 @@ var GameState = {
         }, this );
 
         this.updatePoints();
-        // this.updateLife();
-
-        // this.i++;
-        //
-        // if (this.i === this.update_interval) {
-        //     this.changeWindDirection();
-        //     this.update_interval = Math.floor(Math.random() * 4) * 20; // 0 - 20sec @ 60fps
-        //     this.i = 0;
-        // }
     },
 
     // MARK: - Public Methods
@@ -109,16 +90,15 @@ var GameState = {
 
         this.scoreText = game.add.text(16, 16, 'Pontuação: 0 / ' + this.maxPoints, { fontSize: '14px', fill: '#000' });
         this.scoreText.fixedToCamera = true;
-
-        // Segunda fase
-        // this.progress = this.game.add.sprite(20, this.world.centerY, 'progress');
-        // this.progress.anchor.setTo(0.5);
-        // this.progress.fixedToCamera = true;
     },
 
     backgroundCreate: function() {
         this.background = this.game.add.sprite(0, 0, 'background');
         this.background.fixedToCamera = true;
+
+        this.baseMountain = this.game.add.sprite(0, 0, 'baseMountain');
+        this.baseMountain.anchor.setTo(0, 1);
+        this.baseMountain.y = this.world.height;
     },
 
     platformsCreate: function() {
