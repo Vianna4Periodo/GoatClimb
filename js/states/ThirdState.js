@@ -1,4 +1,4 @@
-var GameState = {
+var ThirdState = {
 
     // MARK: - Life Cycle
 
@@ -20,26 +20,29 @@ var GameState = {
         this.jumpForce = 500;
         this.points = 0;
         this.life = 3;
-        this.maxPoints = 300;
+        this.maxPoints = 500;
     },
 
     preload: function() {
         this.load.spritesheet("goat", "assets/goat_jump_sprite.png", 200, 220, 5, 0, 10);
         this.load.spritesheet("bird_monster", "assets/bird_monster.png", 111, 86, 4, 1, 4);
+        this.load.spritesheet('lifeHUD', 'assets/life.png', 99, 23, 3, 0, 5);
 
         this.load.image('platform', 'assets/platform_block.png');
-        this.load.image('baseMountain', 'assets/base_mountain.png');
-        this.load.image('background', 'assets/background.png');
+        this.load.image('baseMountain', 'assets/base_mountain_3.png');
+        this.load.image('background', 'assets/background_3.png');
+
+        this.load.audio('music', ['assets/sound/secondStateMusic.ogg']);
+        this.load.audio('jumpMusic', ['assets/sound/jump.ogg']);
     },
 
     create: function() {
-        this.stage.backgroundColor = '#b4e3dd';
-
         this.backgroundCreate();
         this.platformsCreate();
         this.enemiesCreate();
         this.goatCreate();
 
+        this.setupMusic();
         this.setupHUD();
     },
 
@@ -58,24 +61,24 @@ var GameState = {
         this.cameraYMin = Math.min(this.cameraYMin, this.goat.y - this.game.height + 130);
         this.camera.y = this.cameraYMin;
 
-        this.physics.arcade.collide(this.goat, this.birds, this.collisionEnemyHandler, null, this);
-        this.physics.arcade.collide(this.goat, this.platforms, this.collisionPlataformHandler, null, this);
+        this.physics.arcade.overlap(this.goat, this.birds, this.collisionEnemyHandler, null, this);
+        this.physics.arcade.collide(this.goat, this.platforms, null, null, this);
 
         this.goatMovement();
 
         this.platforms.forEachAlive( function( elem ) {
-          this.platformYMin = Math.min(this.platformYMin, elem.y);
+            this.platformYMin = Math.min(this.platformYMin, elem.y);
 
-          if(elem.y > this.camera.y + this.game.height) {
-            elem.kill();
-            var random = this.rnd.integerInRange(1, 10);
+            if(elem.y > this.camera.y + this.game.height) {
+                elem.kill();
+                var random = this.rnd.integerInRange(1, 10);
 
-            if (random % 3 == 0) {
-                this.enemyCreate(this.platformYMin + 10);
+                if (random % 3 == 0) {
+                    this.enemyCreate(this.platformYMin + 10);
+                }
+
+                this.platformCreate(this.rnd.integerInRange(0, this.world.width - this.platformBlockSize), this.platformYMin - 100, this.rnd.integerInRange(1, 3));
             }
-
-            this.platformCreate(this.rnd.integerInRange(0, this.world.width - this.platformBlockSize), this.platformYMin - 100, this.rnd.integerInRange(1, 3));
-          }
         }, this );
 
         this.updatePoints();
@@ -83,12 +86,22 @@ var GameState = {
 
     // MARK: - Public Methods
 
-    setupHUD: function() {
-        // Segunda fase
-        // this.lifeText = game.add.text(16, 16, 'Vidas: ' + this.life, { fontSize: '14px', fill: '#000' });
-        // this.lifeText.fixedToCamera = true;
+    setupMusic: function() {
+        this.jumpMusic = this.game.add.audio('jumpMusic');
 
-        this.scoreText = game.add.text(16, 16, 'Pontuação: 0 / ' + this.maxPoints, { fontSize: '14px', fill: '#000' });
+        this.music = this.game.add.audio('music');
+        this.music.volume = 0.5;
+        this.music.loop = true;
+        this.music.play();
+    },
+
+    setupHUD: function() {
+        this.lifeHUD = this.game.add.sprite(16, 16, 'lifeHUD');
+        this.lifeHUD.frame = this.life - 1;
+        this.lifeHUD.fixedToCamera = true;
+
+        this.scoreText = this.game.add.text(this.world.width - 16, 14, this.maxPoints, { fontSize: '24px', fill: '#fff' });
+        this.scoreText.anchor.setTo(1, 0);
         this.scoreText.fixedToCamera = true;
     },
 
@@ -140,6 +153,10 @@ var GameState = {
         bird.enableBody = true;
         bird.body.immovable = true;
 
+        bird.events.onOutOfBounds.add(function(obstacle) {
+            obstacle.kill();
+        }, this);
+
         var randomOrigin = this.rnd.integerInRange(1, 9);
         var position = 350;
 
@@ -165,17 +182,15 @@ var GameState = {
         platform.width = this.platformBlockSize * count;
         platform.body.immovable = true;
 
-        // Liberar somente na segunda fase
+        var randomOrigin = this.rnd.integerInRange(1, 9);
+        var position = 350;
 
-        // var randomOrigin = this.rnd.integerInRange(1, 9);
-        // var position = 350;
-        //
-        // if (randomOrigin % 3 == 0) {
-        //     platform.position.x = 300;
-        //     position = position * -1;
-        // }
-        //
-        // game.add.tween(platform).to( { x: position }, 30000, Phaser.Easing.Linear.None, true);
+        if (randomOrigin % 3 == 0) {
+            platform.position.x = 300;
+            position = position * -1;
+        }
+
+        this.game.add.tween(platform).to( { x: position }, 30000, Phaser.Easing.Linear.None, true);
 
         return platform;
     },
@@ -212,6 +227,7 @@ var GameState = {
             this.goat.play("jump");
             this.goat.body.velocity.y = -this.jumpForce;
             this.points += 10;
+            this.jumpMusic.play();
         }
 
         this.goat.body.velocity.x = velocity;
@@ -219,100 +235,37 @@ var GameState = {
         this.world.wrap(this.goat, this.goat.width / 2, false);
 
         this.goat.yChange = Math.max(this.goat.yChange, Math.abs(this.goat.y - this.goat.yOrig));
-        
+
         if( this.goat.y > this.cameraYMin + this.game.height && this.goat.alive ) {
-            this.resetGame();
+            this.music.stop();
+            this.state.restart();
         }
     },
 
-    collisionPlataformHandler: function(goat, platform, context) {
-        // console.log("collisionPlataformHandler");
-    },
-
-    collisionEnemyHandler: function(goat, enemy, context) {
-        game.state.restart();
-    },
-
-    resetGame: function() {
-        game.state.restart();
+    collisionEnemyHandler: function(goat, enemy) {
+        enemy.kill();
+        this.life -= 1;
+        this.updateLife();
     },
 
     updatePoints: function() {
-        this.scoreText.setText("Pontuação: " + this.points + " / " + this.maxPoints);
+        this.scoreText.setText(this.points + " / " + this.maxPoints);
 
         if (this.points >= this.maxPoints) {
-            game.state.start('SecondState');
+            this.music.stop();
+            this.game.state.start('FinalState');
         }
     },
 
-    // updateLife: function() {
-    //     this.lifeText.setText("Vidas: " + this.life + " / 3");
-    // }
+    updateLife: function() {
+        this.lifeHUD.frame = this.life - 1;
 
-    setupSnow: function() {
-        this.back_emitter = game.add.emitter(game.world.centerX, -32, 600);
-        this.back_emitter.makeParticles('snowflakes', [0, 1, 2, 3, 4, 5]);
-        this.back_emitter.maxParticleScale = 0.6;
-        this.back_emitter.minParticleScale = 0.2;
-        this.back_emitter.setYSpeed(20, 100);
-        this.back_emitter.gravity = 0;
-        this.back_emitter.width = game.world.width * 1.5;
-        this.back_emitter.minRotation = 0;
-        this.back_emitter.maxRotation = 40;
+        if (this.life <= 0) {
+            this.goat.kill();
+            this.music.stop();
+            this.state.restart();
+        }
 
-        this.mid_emitter = game.add.emitter(game.world.centerX, -32, 250);
-        this.mid_emitter.makeParticles('snowflakes', [0, 1, 2, 3, 4, 5]);
-        this.mid_emitter.maxParticleScale = 1.2;
-        this.mid_emitter.minParticleScale = 0.8;
-        this.mid_emitter.setYSpeed(50, 150);
-        this.mid_emitter.gravity = 0;
-        this.mid_emitter.width = game.world.width * 1.5;
-        this.mid_emitter.minRotation = 0;
-        this.mid_emitter.maxRotation = 40;
-
-        this.front_emitter = game.add.emitter(game.world.centerX, -32, 50);
-        this.front_emitter.makeParticles('snowflakes', [0, 1, 2, 3, 4, 5]);
-        this.front_emitter.maxParticleScale = 1;
-        this.front_emitter.minParticleScale = 0.5;
-        this.front_emitter.setYSpeed(100, 200);
-        this.front_emitter.gravity = 0;
-        this.front_emitter.width = game.world.width * 1.5;
-        this.front_emitter.minRotation = 0;
-        this.front_emitter.maxRotation = 40;
-
-        this.changeWindDirection();
-
-        this.back_emitter.start(false, 14000, 20);
-        this.mid_emitter.start(false, 12000, 40);
-        this.front_emitter.start(false, 6000, 1000);
-    },
-
-    changeWindDirection: function() {
-
-        var multi = Math.floor((this.max + 200) / 4),
-            frag = (Math.floor(Math.random() * 100) - multi);
-        this.max = this.max + frag;
-
-        if (this.max > 200) this.max = 150;
-        if (this.max < -200) this.max = -150;
-
-        this.setXSpeed(this.back_emitter, this.max);
-        this.setXSpeed(this.mid_emitter, this.max);
-        this.setXSpeed(this.front_emitter, this.max);
-
-    },
-
-    setXSpeed: function(emitter, max) {
-
-        emitter.setXSpeed(max - 20, max);
-        emitter.forEachAlive(this.setParticleXSpeed, this, max);
-
-    },
-
-    setParticleXSpeed: function(particle, max) {
-
-        particle.body.velocity.x = max - Math.floor(Math.random() * 30);
-
-    },
+    }
 
 };

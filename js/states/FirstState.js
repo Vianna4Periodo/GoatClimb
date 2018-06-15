@@ -1,4 +1,4 @@
-var SecondState = {
+var FirstState = {
 
     // MARK: - Life Cycle
 
@@ -29,10 +29,10 @@ var SecondState = {
         this.load.spritesheet('lifeHUD', 'assets/life.png', 99, 23, 3, 0, 5);
 
         this.load.image('platform', 'assets/platform_block.png');
-        this.load.image('baseMountain', 'assets/base_mountain_2.png');
-        this.load.image('background', 'assets/background_2.png');
+        this.load.image('baseMountain', 'assets/base_mountain.png');
+        this.load.image('background', 'assets/background.png');
 
-        this.load.audio('music', ['assets/sound/secondStateMusic.ogg']);
+        this.load.audio('music', ['assets/sound/firstStateMusic.ogg']);
         this.load.audio('jumpMusic', ['assets/sound/jump.ogg']);
     },
 
@@ -67,18 +67,18 @@ var SecondState = {
         this.goatMovement();
 
         this.platforms.forEachAlive( function( elem ) {
-            this.platformYMin = Math.min(this.platformYMin, elem.y);
+          this.platformYMin = Math.min(this.platformYMin, elem.y);
 
-            if(elem.y > this.camera.y + this.game.height) {
-                elem.kill();
-                var random = this.rnd.integerInRange(1, 10);
+          if(elem.y > this.camera.y + this.game.height) {
+            elem.kill();
+            var random = this.rnd.integerInRange(1, 10);
 
-                if (random % 3 == 0) {
-                    this.enemyCreate(this.platformYMin + 10);
-                }
-
-                this.platformCreate(this.rnd.integerInRange(0, this.world.width - this.platformBlockSize), this.platformYMin - 100, this.rnd.integerInRange(1, 3));
+            if (random % 3 == 0) {
+                this.enemyCreate(this.platformYMin + 10);
             }
+
+            this.platformCreate(this.rnd.integerInRange(0, this.world.width - this.platformBlockSize), this.platformYMin - 100, this.rnd.integerInRange(1, 3));
+          }
         }, this );
 
         this.updatePoints();
@@ -88,9 +88,10 @@ var SecondState = {
 
     setupMusic: function() {
         this.jumpMusic = this.game.add.audio('jumpMusic');
+        this.jumpMusic.volume = 0.5;
 
         this.music = this.game.add.audio('music');
-        this.music.volume = 0.5;
+        this.music.volume = 1;
         this.music.loop = true;
         this.music.play();
     },
@@ -100,7 +101,7 @@ var SecondState = {
         this.lifeHUD.frame = this.life - 1;
         this.lifeHUD.fixedToCamera = true;
 
-        this.scoreText = this.game.add.text(this.world.width - 16, 14, this.maxPoints, { fontSize: '24px', fill: '#fff' });
+        this.scoreText = this.game.add.text(this.world.width - 16, 14, this.maxPoints, { fontSize: '24px', fill: '#000' });
         this.scoreText.anchor.setTo(1, 0);
         this.scoreText.fixedToCamera = true;
     },
@@ -143,7 +144,7 @@ var SecondState = {
             sizeScale = 0.5;
         }
 
-        var bird = game.add.sprite(0, positionY, 'bird_monster');
+        var bird = this.game.add.sprite(0, positionY, 'bird_monster');
         bird.position.y = positionY;
         bird.scale.setTo(sizeScale);
         bird.animations.add("fly", [0, 1, 2, 3], 6, true);
@@ -167,7 +168,7 @@ var SecondState = {
             position = position * -1;
         }
 
-        game.add.tween(bird).to( { x: position }, 20000, Phaser.Easing.Linear.None, true);
+        this.game.add.tween(bird).to( { x: position }, 20000, Phaser.Easing.Linear.None, true);
 
         this.birds.add(bird);
     },
@@ -181,16 +182,6 @@ var SecondState = {
         platform.reset(x, y);
         platform.width = this.platformBlockSize * count;
         platform.body.immovable = true;
-
-        var randomOrigin = this.rnd.integerInRange(1, 9);
-        var position = 350;
-
-        if (randomOrigin % 3 == 0) {
-            platform.position.x = 300;
-            position = position * -1;
-        }
-
-        this.game.add.tween(platform).to( { x: position }, 30000, Phaser.Easing.Linear.None, true);
 
         return platform;
     },
@@ -235,7 +226,7 @@ var SecondState = {
         this.world.wrap(this.goat, this.goat.width / 2, false);
 
         this.goat.yChange = Math.max(this.goat.yChange, Math.abs(this.goat.y - this.goat.yOrig));
-
+        
         if( this.goat.y > this.cameraYMin + this.game.height && this.goat.alive ) {
             this.music.stop();
             this.state.restart();
@@ -253,7 +244,7 @@ var SecondState = {
 
         if (this.points >= this.maxPoints) {
             this.music.stop();
-            this.game.state.start('ThirdStartState');
+            this.game.state.start('SecondStartState');
         }
     },
 
